@@ -1,7 +1,9 @@
 # Скрипт для миграции из PostgreSQL в ClickHouse:
 
 ## 1. **SQL скрипт для генерации миграции PostgreSQL → ClickHouse**
+
 [notion](https://stackoverflow.com/questions/58023405/error-raise-when-use-within-group-with-string-agg-in-postgresql)
+
 ```sql
 WITH table_columns AS (
     SELECT 
