@@ -1,7 +1,7 @@
 # Скрипт для миграции из PostgreSQL в ClickHouse:
 
 ## 1. **SQL скрипт для генерации миграции PostgreSQL → ClickHouse**
-
+[notion](https://stackoverflow.com/questions/58023405/error-raise-when-use-within-group-with-string-agg-in-postgresql)
 ```sql
 WITH table_columns AS (
     SELECT 
@@ -21,10 +21,11 @@ WITH table_columns AS (
 aggregated_data AS (
     SELECT 
         table_schema,
-        table_name,
+        table_name
+        ,
         -- ClickHouse DDL
         STRING_AGG(
-            column_name || ' ' ||
+            column_name::text || ' ' ||
             CASE data_type
                 WHEN 'integer' THEN 'Int32'
                 WHEN 'bigint' THEN 'Int64'
@@ -46,22 +47,24 @@ aggregated_data AS (
                 WHEN 'uuid' THEN 'UUID'
                 ELSE 'String'
             END ||
-            CASE WHEN is_nullable = 'YES' THEN ' NULL' ELSE '' END,
-            ', '
-        ) WITHIN GROUP (ORDER BY ordinal_position) AS ch_table_definition,
+            CASE WHEN is_nullable = 'YES' THEN ' NULL' ELSE '' END
+,
+            ', ' ORDER BY ordinal_position
+        ) /*WITHIN GROUP (ORDER BY ordinal_position)*/ AS ch_table_definition
+        ,
         
         -- ClickHouse INSERT statement
         'INSERT INTO ' || table_schema || '_' || table_name || ' (' ||
-        STRING_AGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) || ') ' ||
-        'SELECT ' || STRING_AGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) ||
+        STRING_AGG(column_name::text, ', ' ORDER BY ordinal_position) /*WITHIN GROUP (ORDER BY ordinal_position)*/ || ') ' ||
+        'SELECT ' || STRING_AGG(column_name, ', ' ORDER BY ordinal_position) /*WITHIN GROUP (ORDER BY ordinal_position)*/ ||
         ' FROM ' || table_schema || '_' || table_name || '_str;' AS ch_insert_statement,
         
         -- Структура для временной таблицы (все поля String)
-        '(' || STRING_AGG(column_name || ' Nullable(String)', ', ') || ')' AS ch_string_table_definition,
+        '(' || STRING_AGG(column_name::text || ' Nullable(String)', ', ') || ')' AS ch_string_table_definition,
         
         -- ORDER BY clause (попробуем найти первичный ключ)
         COALESCE(
-            (SELECT STRING_AGG(column_name, ', ')
+            (SELECT STRING_AGG(column_name::text, ', ')
              FROM information_schema.table_constraints tc
              JOIN information_schema.key_column_usage kcu 
                  ON tc.constraint_name = kcu.constraint_name
