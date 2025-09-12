@@ -132,8 +132,8 @@ SELECT
             WHEN 'uuid' THEN 'UUID'
             ELSE 'String'
         END,
-        ', '
-    ) WITHIN GROUP (ORDER BY ordinal_position) ||
+        ', ' ORDER BY ordinal_position
+    ) /*WITHIN GROUP (ORDER BY ordinal_position)*/ ||
     ') ENGINE = MergeTree() ORDER BY tuple();' AS clickhouse_ddl,
     
     'COPY (SELECT * FROM ' || table_schema || '.' || table_name || ') TO STDOUT ' ||
@@ -198,8 +198,8 @@ for TABLE in $TABLES; do
             WHEN 'uuid' THEN 'UUID'
             ELSE 'String'
         END,
-        ', '
-    ) WITHIN GROUP (ORDER BY ordinal_position) ||
+        ', ' ORDER BY ordinal_position
+    ) /*WITHIN GROUP (ORDER BY ordinal_position)*/ ||
     ') ENGINE = MergeTree() ORDER BY tuple();'
     FROM information_schema.columns 
     WHERE table_schema = '$SCHEMA' AND table_name = '$NAME'
