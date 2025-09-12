@@ -26,7 +26,7 @@ aggregated_data AS (
         table_name
         ,
         -- ClickHouse DDL
-        STRING_AGG(
+        '(' || STRING_AGG(
             column_name::text || ' ' ||
             CASE data_type
                 WHEN 'integer' THEN 'Int32'
@@ -52,7 +52,7 @@ aggregated_data AS (
             CASE WHEN is_nullable = 'YES' THEN ' NULL' ELSE '' END
 ,
             ', ' ORDER BY ordinal_position
-        ) /*WITHIN GROUP (ORDER BY ordinal_position)*/ AS ch_table_definition
+        ) || ')' /*WITHIN GROUP (ORDER BY ordinal_position)*/ AS ch_table_definition
         ,
         
         -- ClickHouse INSERT statement
@@ -73,6 +73,7 @@ aggregated_data AS (
              WHERE tc.table_schema = table_columns.table_schema
                  AND tc.table_name = table_columns.table_name
                  AND tc.constraint_type = 'PRIMARY KEY'
+                 AND kcu.constraint_schema = table_columns.table_schema -- !!!!!!!
              GROUP BY tc.table_schema, tc.table_name),
             'tuple()'
         ) AS order_by_clause
@@ -89,7 +90,7 @@ SELECT
     -- DDL для финальной таблицы
     'CREATE TABLE ' || table_schema || '_' || table_name || ' ' || 
     ch_table_definition || 
-    ' ENGINE = MergeTree() ORDER BY ' || order_by_clause || ';' AS create_final_table_ddl,
+    ' ENGINE = MergeTree() ORDER BY (' || order_by_clause || ');' AS create_final_table_ddl,
     
     -- INSERT statement
     ch_insert_statement,
