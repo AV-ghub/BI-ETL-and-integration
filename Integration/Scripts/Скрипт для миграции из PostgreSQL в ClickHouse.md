@@ -73,7 +73,7 @@ aggregated_data AS (
              WHERE tc.table_schema = table_columns.table_schema
                  AND tc.table_name = table_columns.table_name
                  AND tc.constraint_type = 'PRIMARY KEY'
-                 AND kcu.constraint_schema = table_columns.table_schema -- !!!!!!!
+                 AND kcu.constraint_schema = table_columns.table_schema  -- !!!!!!!
              GROUP BY tc.table_schema, tc.table_name),
             'tuple()'
         ) AS order_by_clause
